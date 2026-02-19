@@ -1,6 +1,6 @@
 # Datagroom MCP Server
 
-<<<<<<< HEAD
+
 MCP (Model Context Protocol) server that enables LLMs to interact with Datagroom datasets through natural language queries in Cursor IDE.
 
 ## Overview
@@ -65,7 +65,6 @@ This server provides a bridge between LLMs (e.g. Claude in Cursor) and your Data
 - Python 3.10+
 - Datagroom Gateway running (e.g. `http://localhost:8887`)
 - PAT token for Gateway auth
->>>>>>> 6828d3c (Replace TypeScript with Python (FastMCP, Pydantic v2))
 
 ## Installation
 
@@ -165,13 +164,11 @@ uvicorn main:app --reload --host 0.0.0.0 --port 3000
 When using `uvicorn main:app`, MongoDB connection is not attempted (only `python main.py` does that). Use `python main.py` for full startup behavior including optional Mongo connect.
 
 ### Verify
->>>>>>> 6828d3c (Replace TypeScript with Python (FastMCP, Pydantic v2))
 
 ```bash
 curl http://localhost:3000/health
 ```
 
-<<<<<<< HEAD
 You should see:
 ```json
 {"status":"ok","service":"datagroom-mcp-server"}
@@ -192,7 +189,6 @@ Expected: `{"status":"ok","service":"datagroom-mcp-server"}`
 1. Open Cursor Settings (Cmd/Ctrl + ,).
 2. Go to MCP Servers (or search for "MCP").
 3. Add:
->>>>>>> 6828d3c (Replace TypeScript with Python (FastMCP, Pydantic v2))
 
    ```json
    {
@@ -508,4 +504,3 @@ Config load order: `.env` first, then Cursor `mcp.json` under `mcpServers.datagr
 ## License
 
 MIT.
->>>>>>> 6828d3c (Replace TypeScript with Python (FastMCP, Pydantic v2))
