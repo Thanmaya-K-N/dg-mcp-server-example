@@ -1,5 +1,6 @@
 # Datagroom MCP Server
 
+<<<<<<< HEAD
 MCP (Model Context Protocol) server that enables LLMs to interact with Datagroom datasets through natural language queries in Cursor IDE.
 
 ## Overview
@@ -42,6 +43,29 @@ User in Cursor
 - Node.js 18+ 
 - MongoDB instance (local or remote)
 - TypeScript 5.3+
+=======
+MCP (Model Context Protocol) server that enables LLMs to interact with Datagroom datasets through natural language in Cursor IDE. Implemented in Python (FastMCP, Pydantic v2).
+
+**Stack:** FastMCP, Pydantic v2, httpx, asyncio, uvicorn, python-dotenv.
+
+## Overview
+
+This server provides a bridge between LLMs (e.g. Claude in Cursor) and your Datagroom datasets. It translates structured tool calls into Gateway API requests. All tools authenticate via PAT and go through the Datagroom Gateway.
+
+**Features:**
+- Query datasets with structured filters
+- Get dataset schemas and sample data
+- Aggregations (count supported via Gateway; sum/avg/min/max require future Gateway endpoint)
+- List available datasets
+- Sample rows (first page as sample; stratification not supported by Gateway)
+- Pagination and markdown/JSON response formats
+
+## Prerequisites
+
+- Python 3.10+
+- Datagroom Gateway running (e.g. `http://localhost:8887`)
+- PAT token for Gateway auth
+>>>>>>> 6828d3c (Replace TypeScript with Python (FastMCP, Pydantic v2))
 
 ## Installation
 
@@ -50,6 +74,7 @@ User in Cursor
    cd datagroom-mcp-server
    ```
 
+<<<<<<< HEAD
 2. **Install dependencies:**
    ```bash
    npm install
@@ -93,11 +118,60 @@ npm run dev
 ### Verify Installation
 
 Check that the server is running:
+=======
+2. **Create a virtual environment (recommended):**
+   ```bash
+   python -m venv .venv
+   .venv\Scripts\activate   # Windows
+   # source .venv/bin/activate  # macOS/Linux
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Configure environment:**
+   ```bash
+   copy .env.example .env   # Windows
+   # cp .env.example .env   # macOS/Linux
+   ```
+   Edit `.env` and set at least:
+   - `DATAGROOM_PAT_TOKEN` – your Datagroom PAT token
+   - `DATAGROOM_GATEWAY_URL` – Gateway base URL (default `http://localhost:8887`)
+
+   Optionally set `MCP_SERVER_PORT` (default `3000`) and `MONGODB_URL` (optional; tools use Gateway).
+
+## Running the server
+
+### Production
+
+From the project root (`datagroom-mcp-server`):
+
+```bash
+python main.py
+```
+
+The server listens on `0.0.0.0:3000` (or `MCP_SERVER_PORT`). MCP endpoint: `http://localhost:3000/mcp/v1`.
+
+### Development
+
+Same as production; for auto-reload during development you can use:
+
+```bash
+uvicorn main:app --reload --host 0.0.0.0 --port 3000
+```
+
+When using `uvicorn main:app`, MongoDB connection is not attempted (only `python main.py` does that). Use `python main.py` for full startup behavior including optional Mongo connect.
+
+### Verify
+>>>>>>> 6828d3c (Replace TypeScript with Python (FastMCP, Pydantic v2))
 
 ```bash
 curl http://localhost:3000/health
 ```
 
+<<<<<<< HEAD
 You should see:
 ```json
 {"status":"ok","service":"datagroom-mcp-server"}
@@ -110,6 +184,15 @@ After starting the MCP server, configure Cursor to use it:
 1. **Open Cursor Settings** (Cmd/Ctrl + ,)
 2. **Navigate to MCP Servers** (or search for "MCP")
 3. **Add new server configuration:**
+=======
+Expected: `{"status":"ok","service":"datagroom-mcp-server"}`
+
+## Cursor IDE configuration
+
+1. Open Cursor Settings (Cmd/Ctrl + ,).
+2. Go to MCP Servers (or search for "MCP").
+3. Add:
+>>>>>>> 6828d3c (Replace TypeScript with Python (FastMCP, Pydantic v2))
 
    ```json
    {
@@ -122,6 +205,7 @@ After starting the MCP server, configure Cursor to use it:
    }
    ```
 
+<<<<<<< HEAD
 4. **Restart Cursor**
 5. **Test by asking:** "What datasets are available?" or "Show me the schema for [dataset_name]"
 
@@ -359,3 +443,69 @@ For issues or questions:
 - Open an issue on GitHub
 - Check the troubleshooting section above
 - Review MongoDB and MCP SDK documentation
+=======
+4. Restart Cursor.
+5. Try: "What datasets are available?" or "Show me the schema for [dataset_name]".
+
+## Available tools
+
+| Tool | Description |
+|------|-------------|
+| `datagroom_get_schema` | Dataset structure, columns, sample values, sample data |
+| `datagroom_query_dataset` | Filter, sort, paginate; returns markdown table or JSON |
+| `datagroom_aggregate_dataset` | Count (and future sum/avg/min/max when Gateway supports it) |
+| `datagroom_list_datasets` | List dataset names and metadata |
+| `datagroom_sample_dataset` | Sample rows (up to 100; first page from Gateway) |
+
+Tool names, input schemas, and response shapes follow the MCP tool contract.
+
+## Project structure
+
+```
+datagroom-mcp-server/
+├── main.py              # Entry point, FastMCP app, /health, /mcp/v1
+├── config.py             # Env + Cursor mcp.json loading
+├── schemas.py            # Pydantic models (Filter, Sort, etc.)
+├── requirements.txt
+├── .env.example
+├── README.md
+├── db/
+│   ├── __init__.py
+│   └── connection.py     # Optional MongoDB connection
+├── tools/
+│   ├── __init__.py
+│   ├── get_schema.py
+│   ├── query_dataset.py
+│   ├── aggregate_dataset.py
+│   ├── list_datasets.py
+│   └── sample_dataset.py
+└── utils/
+    ├── __init__.py
+    ├── authenticated_request.py  # Gateway HTTP with PAT
+    ├── error_handlers.py
+    ├── formatters.py
+    └── filter_converter.py
+```
+
+## Environment variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DATAGROOM_PAT_TOKEN` | Yes (for tools) | - | Gateway PAT token |
+| `DATAGROOM_GATEWAY_URL` | No | `http://localhost:8887` | Gateway base URL |
+| `MCP_SERVER_PORT` | No | `3000` | HTTP port |
+| `MONGODB_URL` | No | `mongodb://localhost:27017` | Optional Mongo (server starts without it) |
+| `CURSOR_MCP_JSON_PATH` | No | `~/.cursor/mcp.json` | Override path for loading PAT/URL from Cursor |
+
+Config load order: `.env` first, then Cursor `mcp.json` under `mcpServers.datagroom.env` so `python main.py` can use the same token as Cursor when configured there.
+
+## Error handling
+
+- **Missing PAT:** Tools raise with a clear message if `DATAGROOM_PAT_TOKEN` is not set.
+- **Gateway errors:** Non-2xx responses are raised as errors with status and body.
+- **Validation:** Pydantic validates tool inputs; invalid args produce standard MCP validation errors.
+
+## License
+
+MIT.
+>>>>>>> 6828d3c (Replace TypeScript with Python (FastMCP, Pydantic v2))
