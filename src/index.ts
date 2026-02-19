@@ -1,8 +1,7 @@
 /**
- * Main entry point for Datagroom MCP Server
+ * Main entry point for Datagroom MCP Server.
+ * Config (and thus PAT token) is loaded from: .env, then Cursor mcp.json at ~/.cursor/mcp.json (mcpServers.datagroom.env).
  */
-
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import express from 'express';
 import { MongoClient } from 'mongodb';
 import { connectToMongo, closeMongo } from './db/connection.js';
@@ -16,30 +15,19 @@ async function main() {
   console.log(`Port: ${config.port}`);
   console.log('');
   
-  // Connect to MongoDB
-  let mongoClient: MongoClient;
+  // Connect to MongoDB (optional: server can run without it; tools use Gateway)
+  let mongoClient: MongoClient | null = null;
   try {
     mongoClient = await connectToMongo(config.mongoUrl);
-  } catch (error: any) {
-    console.error('Cannot start server without MongoDB connection.');
-    console.error('');
-    process.exit(1);
+  } catch (err: any) {
+    console.warn('MongoDB not available (' + (err.message || err) + '). Server will start anyway; tools use Gateway.');
+    console.log('');
   }
-  
-  // Create MCP server
-  const server = new Server(
-    {
-      name: 'datagroom-mcp-server',
-      version: '1.0.0'
-    },
-    {
-      capabilities: {
-        tools: {}
-      }
-    }
-  );
-  
-  // Register all tools (they're stored in a Map, not via SDK handlers)
+
+  // Tool registry (no SDK Server at runtime for Node 12 compatibility)
+  const server = { name: 'datagroom-mcp-server', version: '1.0.0' as const };
+
+  // Register all tools (they're stored in a Map; we handle MCP in this file)
   registerAllTools(server, mongoClient);
   
   // Set up Express app

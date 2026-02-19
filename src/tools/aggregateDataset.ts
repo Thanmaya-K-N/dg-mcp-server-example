@@ -3,7 +3,7 @@
  * Perform aggregations on dataset
  */
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { MCPToolRegistry } from '../types.js';
 import { z } from 'zod';
 import { MongoClient } from 'mongodb';
 import { makeAuthenticatedRequest } from '../utils/authenticatedRequest.js';
@@ -38,29 +38,34 @@ const AggregateDatasetInputSchema = z.object({
 }).strict();
 
 export function registerAggregateDatasetTool(
-  server: Server, 
-  client: MongoClient,
+  server: MCPToolRegistry,
+  client: MongoClient | null,
   toolHandlers: Map<string, (request: any) => Promise<any>>
 ) {
   toolHandlers.set('datagroom_aggregate_dataset', async (request: any) => {
 
     try {
       const params = AggregateDatasetInputSchema.parse(request.params.arguments);
-      // Proxy to Gateway for aggregation
-      const gatewayResponse = await makeAuthenticatedRequest(
-        `/api/dataset/${encodeURIComponent(params.dataset_name)}/aggregate`,
-        'POST',
-        {
-          filters: params.filters,
-          aggregations: params.aggregations,
-          group_by: params.group_by
-        }
-      );
+      // Gateway has no aggregate endpoint yet; use viewViaPost to get data and compute client-side for count
+      if (params.aggregations.length === 1 && params.aggregations[0].operation === 'count' && !params.group_by) {
+        const gatewayResponse = await makeAuthenticatedRequest(
+          `/ds/viewViaPost/${encodeURIComponent(params.dataset_name)}/default/mcp`,
+          'POST',
+          { filters: params.filters, sorters: [], page: 1, per_page: 1 }
+        );
+        const total = gatewayResponse.total != null ? gatewayResponse.total : (gatewayResponse.data || []).length;
+        return {
+          content: [{ type: 'text', text: `Count: ${total}` }],
+          structuredContent: { count: total }
+        };
+      }
+      // sum/avg/min/max and group_by require a Gateway aggregate endpoint (not yet implemented)
       return {
         content: [{
           type: 'text',
-          text: JSON.stringify(gatewayResponse, null, 2)
-        }]
+          text: 'Only count aggregation is supported via Gateway at this time. sum/avg/min/max and group_by require a future Gateway endpoint.'
+        }],
+        isError: true
       };
       
     } catch (error: any) {

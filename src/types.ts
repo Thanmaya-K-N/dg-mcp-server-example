@@ -2,12 +2,18 @@
  * Type definitions for Datagroom MCP Server
  */
 
+/** Minimal type for tool registration (replaces @modelcontextprotocol/sdk Server for Node 12 compatibility) */
+export interface MCPToolRegistry {
+  readonly name: string;
+  readonly version: string;
+}
+
 export type FilterType = 'eq' | 'ne' | 'gt' | 'lt' | 'gte' | 'lte' | 'in' | 'nin' | 'regex';
 
 export interface Filter {
   field: string;
   type: FilterType;
-  value: any;
+  value?: any;
 }
 
 export interface Sort {

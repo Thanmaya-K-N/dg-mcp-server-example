@@ -37,20 +37,7 @@ export async function connectToMongo(url: string): Promise<MongoClient> {
   } catch (error: any) {
     client = null;
     const errorMessage = error.message || 'Unknown error';
-    console.error('✗ Failed to connect to MongoDB:');
-    console.error(`  URL: ${url}`);
-    console.error(`  Error: ${errorMessage}`);
-    console.error('');
-    console.error('Please ensure:');
-    console.error('  1. MongoDB is running');
-    console.error('  2. The connection URL is correct');
-    console.error('  3. MongoDB is accessible from this machine');
-    console.error('');
-    console.error('To start MongoDB locally:');
-    console.error('  - Windows: net start MongoDB');
-    console.error('  - Linux/Mac: sudo systemctl start mongod');
-    console.error('  - Docker: docker run -d -p 27017:27017 mongo');
-    throw new Error(`MongoDB connection failed: ${errorMessage}`);
+    throw new Error(errorMessage);
   }
 }
 

@@ -3,7 +3,7 @@
  * Get stratified random sample of rows
  */
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { MCPToolRegistry } from '../types.js';
 import { z } from 'zod';
 import { MongoClient } from 'mongodb';
 import { makeAuthenticatedRequest } from '../utils/authenticatedRequest.js';
@@ -16,26 +16,31 @@ const SampleDatasetInputSchema = z.object({
 }).strict();
 
 export function registerSampleDatasetTool(
-  server: Server, 
-  client: MongoClient,
+  server: MCPToolRegistry,
+  client: MongoClient | null,
   toolHandlers: Map<string, (request: any) => Promise<any>>
 ) {
   toolHandlers.set('datagroom_sample_dataset', async (request: any) => {
     try {
       const params = SampleDatasetInputSchema.parse(request.params.arguments);
+      // Route through Gateway: get first page of rows as sample (stratify not supported by gateway)
       const gatewayResponse = await makeAuthenticatedRequest(
-        `/api/dataset/${encodeURIComponent(params.dataset_name)}/sample`,
+        `/ds/viewViaPost/${encodeURIComponent(params.dataset_name)}/default/mcp`,
         'POST',
         {
-          sample_size: params.sample_size,
-          stratify_by: params.stratify_by
+          filters: [],
+          sorters: [],
+          page: 1,
+          per_page: Math.min(params.sample_size || 20, 100)
         }
       );
+      const data = gatewayResponse.data || [];
+      const text = data.length
+        ? `Sample (${data.length} rows):\n${JSON.stringify(data, null, 2)}`
+        : 'No data in dataset or access denied.';
       return {
-        content: [{
-          type: 'text',
-          text: JSON.stringify(gatewayResponse, null, 2)
-        }]
+        content: [{ type: 'text', text }],
+        structuredContent: gatewayResponse
       };
     } catch (error: any) {
       return {

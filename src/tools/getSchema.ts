@@ -3,7 +3,7 @@
  * Get dataset structure and sample data
  */
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { MCPToolRegistry } from '../types.js';
 import { z } from 'zod';
 import { MongoClient } from 'mongodb';
 import { makeAuthenticatedRequest } from '../utils/authenticatedRequest.js';
@@ -17,17 +17,17 @@ const GetSchemaInputSchema = z.object({
 }).strict();
 
 export function registerGetSchemaTool(
-  server: Server, 
-  client: MongoClient,
+  server: MCPToolRegistry,
+  client: MongoClient | null,
   toolHandlers: Map<string, (request: any) => Promise<any>>
 ) {
   toolHandlers.set('datagroom_get_schema', async (request: any) => {
 
     try {
       const params = GetSchemaInputSchema.parse(request.params.arguments);
-      // Proxy to Gateway for schema
+      // Route through Gateway (PAT sets req.user)
       const gatewayResponse = await makeAuthenticatedRequest(
-        `/api/dataset/${encodeURIComponent(params.dataset_name)}/schema`,
+        `/ds/view/columns/${encodeURIComponent(params.dataset_name)}/default/mcp`,
         'GET'
       );
       return {

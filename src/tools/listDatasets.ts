@@ -3,29 +3,32 @@
  * List all available datasets
  */
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { MCPToolRegistry } from '../types.js';
 import { MongoClient } from 'mongodb';
 import { makeAuthenticatedRequest } from '../utils/authenticatedRequest.js';
 import { formatError } from '../utils/errorHandlers.js';
 
 export function registerListDatasetsTool(
-  server: Server, 
-  client: MongoClient,
+  server: MCPToolRegistry,
+  client: MongoClient | null,
   toolHandlers: Map<string, (request: any) => Promise<any>>
 ) {
   toolHandlers.set('datagroom_list_datasets', async (request: any) => {
 
     try {
-      // Proxy to Gateway for dataset list
+      // Route through Gateway (PAT sets req.user; placeholder dsUser is ignored)
       const gatewayResponse = await makeAuthenticatedRequest(
-        `/api/datasets`,
+        `/ds/dsList/mcp`,
         'GET'
       );
+      const dbList = gatewayResponse.dbList || [];
+      const names = dbList.map((d: { name: string }) => d.name);
       return {
         content: [{
           type: 'text',
-          text: JSON.stringify(gatewayResponse, null, 2)
-        }]
+          text: `Datasets (${names.length}): ${names.join(', ') || 'none'}`
+        }],
+        structuredContent: { datasets: names, dbList: gatewayResponse.dbList }
       };
       
     } catch (error: any) {

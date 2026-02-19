@@ -1,4 +1,5 @@
-import { config } from '../config';
+import { config } from '../config.js';
+import fetch from 'node-fetch';
 
 /**
  * Make authenticated request to Datagroom Gateway

@@ -3,7 +3,7 @@
  * Query dataset with structured filters
  */
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { MCPToolRegistry } from '../types.js';
 import { z } from 'zod';
 import { MongoClient } from 'mongodb';
 import { formatQuerySummary, formatMarkdownTable } from '../utils/formatters.js';
@@ -31,35 +31,38 @@ const QueryDatasetInputSchema = z.object({
 }).strict();
 
 export function registerQueryDatasetTool(
-  server: Server,
-  client: MongoClient,
+  server: MCPToolRegistry,
+  client: MongoClient | null,
   toolHandlers: Map<string, (request: any) => Promise<any>>
 ) {
   toolHandlers.set('datagroom_query_dataset', async (request: any) => {
     try {
       const params = QueryDatasetInputSchema.parse(request.params.arguments);
       
-      // Route through Gateway API (NOT direct MongoDB)
-      // This ensures ACLs are enforced
+      // Route through Gateway (PAT sets req.user; ACLs enforced)
+      const maxRows = params.max_rows || 100;
+      const page = Math.floor((params.offset || 0) / maxRows) + 1;
       const response = await makeAuthenticatedRequest(
-        `/api/dataset/${encodeURIComponent(params.dataset_name)}/query`,
+        `/ds/viewViaPost/${encodeURIComponent(params.dataset_name)}/default/mcp`,
         'POST',
         {
           filters: params.filters || [],
           sorters: params.sort ? [params.sort] : [],
-          page: Math.floor((params.offset || 0) / (params.max_rows || 100)),
-          per_page: params.max_rows || 100
+          page,
+          per_page: maxRows
         }
       );
       
-      // Format response
+      const total = response.total || 0;
+      const rowsReturned = (response.data || []).length;
+      const hasMore = (params.offset || 0) + rowsReturned < total;
       const summary = formatQuerySummary(
         params.dataset_name,
-        response.total || 0,
-        (response.data || []).length,
+        total,
+        rowsReturned,
         params.filters || [],
         params.offset || 0,
-        params.response_format || 'markdown'
+        hasMore
       );
       
       const dataTable = formatMarkdownTable(response.data || []);

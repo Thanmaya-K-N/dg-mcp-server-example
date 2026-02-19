@@ -2,7 +2,7 @@
  * Central tool registration
  */
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { MCPToolRegistry } from '../types.js';
 import { MongoClient } from 'mongodb';
 import { registerGetSchemaTool } from './getSchema.js';
 import { registerQueryDatasetTool } from './queryDataset.js';
@@ -13,7 +13,7 @@ import { registerSampleDatasetTool } from './sampleDataset.js';
 // Store handlers for unified routing
 const toolHandlers = new Map<string, (request: any) => Promise<any>>();
 
-export function registerAllTools(server: Server, client: MongoClient) {
+export function registerAllTools(server: MCPToolRegistry, client: MongoClient | null) {
   // Register individual tool handlers (they'll store themselves in toolHandlers)
   registerGetSchemaTool(server, client, toolHandlers);
   registerQueryDatasetTool(server, client, toolHandlers);

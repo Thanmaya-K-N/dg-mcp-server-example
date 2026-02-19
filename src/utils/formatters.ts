@@ -57,8 +57,10 @@ export function formatQuerySummary(
   if (filters.length > 0) {
     lines.push('', '**Applied Filters**:');
     filters.forEach(f => {
-      const valueStr = typeof f.value === 'object' 
-        ? JSON.stringify(f.value) 
+      const valueStr = f.value === undefined
+        ? ''
+        : typeof f.value === 'object'
+        ? JSON.stringify(f.value)
         : String(f.value);
       lines.push(`- \`${f.field}\` ${f.type} \`${valueStr}\``);
     });
